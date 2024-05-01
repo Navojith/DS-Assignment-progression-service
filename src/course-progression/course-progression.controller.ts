@@ -1,11 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { CourseProgressionService } from './course-progression.service';
 import { CreateCourseProgressionDto } from './dto/create-course-progression.dto';
 import { UpdateCourseProgressionDto } from './dto/update-course-progression.dto';
 
 @Controller('course-progression')
 export class CourseProgressionController {
-  constructor(private readonly courseProgressionService: CourseProgressionService) {}
+  constructor(
+    private readonly courseProgressionService: CourseProgressionService,
+  ) {}
 
   @Post()
   create(@Body() createCourseProgressionDto: CreateCourseProgressionDto) {
@@ -19,16 +29,19 @@ export class CourseProgressionController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.courseProgressionService.findOne(+id);
+    return this.courseProgressionService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCourseProgressionDto: UpdateCourseProgressionDto) {
-    return this.courseProgressionService.update(+id, updateCourseProgressionDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateCourseProgressionDto: UpdateCourseProgressionDto,
+  ) {
+    return this.courseProgressionService.update(id, updateCourseProgressionDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.courseProgressionService.remove(+id);
+    return this.courseProgressionService.remove(id);
   }
 }
