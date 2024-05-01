@@ -37,14 +37,19 @@ export class CourseProgressionController {
 
   @Patch(':userId/:courseId')
   update(
-    @Param('id') id: string,
+    @Param('userId') userId: string,
+    @Param('courseId') courseId: string,
     @Body() updateCourseProgressionDto: UpdateCourseProgressionDto,
   ) {
-    return this.courseProgressionService.update(id, updateCourseProgressionDto);
+    return this.courseProgressionService.update(
+      userId,
+      courseId,
+      updateCourseProgressionDto,
+    );
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.courseProgressionService.remove(id);
+  @Delete(':userId/:courseId')
+  remove(@Param('userId') userId: string, @Param('courseId') courseId: string) {
+    return this.courseProgressionService.remove(userId, courseId);
   }
 }

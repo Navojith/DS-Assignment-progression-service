@@ -16,51 +16,117 @@ export class CourseProgressionService {
   async create(
     createCourseProgressionDto: CreateCourseProgressionDto,
   ): Promise<CourseProgression> {
-    const queriedCourseProgression = await this.courseProgressionModel.findOne({
-      courseId: createCourseProgressionDto.courseId,
-      userId: createCourseProgressionDto.userId,
-    });
+    try {
+      const queriedCourseProgression =
+        await this.courseProgressionModel.findOne({
+          courseId: createCourseProgressionDto.courseId,
+          userId: createCourseProgressionDto.userId,
+        });
 
-    if (queriedCourseProgression) {
-      throw new HttpException(
-        `Entry with User ID: '${createCourseProgressionDto.userId}', Course ID: '${createCourseProgressionDto.courseId}' already exists`,
-        HttpStatus.CONFLICT,
-      );
+      if (queriedCourseProgression) {
+        throw new HttpException(
+          `Entry with User ID: '${createCourseProgressionDto.userId}', Course ID: '${createCourseProgressionDto.courseId}' already exists`,
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      const createdEntry = await this.courseProgressionModel.create({
+        courseId: createCourseProgressionDto.courseId,
+        userId: createCourseProgressionDto.userId,
+        completedSteps: createCourseProgressionDto.completedSteps,
+      });
+
+      return createdEntry;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-    const createdEntry = await this.courseProgressionModel.create({
-      courseId: createCourseProgressionDto.courseId,
-      userId: createCourseProgressionDto.userId,
-      completedSteps: createCourseProgressionDto.completedSteps,
-    });
-
-    return createdEntry;
   }
 
   async findAll(): Promise<CourseProgression[]> {
-    const items = await this.courseProgressionModel.find();
-    if (!items) {
-      throw new HttpException('No items found', HttpStatus.NOT_FOUND);
+    try {
+      const items = await this.courseProgressionModel.find();
+      if (!items) {
+        throw new HttpException('No items found', HttpStatus.NOT_FOUND);
+      }
+      return items;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    return items;
   }
 
   async findOne(userId: string, courseId: string): Promise<CourseProgression> {
-    const item = await this.courseProgressionModel.findOne({
-      courseId,
-      userId,
-    });
-    if (!item) {
-      throw new HttpException('No item found', HttpStatus.NOT_FOUND);
+    try {
+      const item = await this.courseProgressionModel.findOne({
+        courseId,
+        userId,
+      });
+      if (!item) {
+        throw new HttpException('No item found', HttpStatus.NOT_FOUND);
+      }
+      return item;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    return item;
   }
 
-  update(id: string, updateCourseProgressionDto: UpdateCourseProgressionDto) {
-    return `This action updates a #${id} courseProgression`;
+  async update(
+    userId: string,
+    courseId: string,
+    updateCourseProgressionDto: UpdateCourseProgressionDto,
+  ): Promise<CourseProgression> {
+    try {
+      const item = await this.courseProgressionModel.findOne({
+        courseId,
+        userId,
+      });
+      if (!item) {
+        throw new HttpException('No item found', HttpStatus.NOT_FOUND);
+      }
+
+      if (
+        updateCourseProgressionDto.userId !== userId ||
+        updateCourseProgressionDto.courseId !== courseId
+      ) {
+        const updating = await this.courseProgressionModel.findOne({
+          courseId: updateCourseProgressionDto.courseId,
+          userId: updateCourseProgressionDto.userId,
+        });
+        if (updating) {
+          throw new HttpException(
+            `Entry with User ID: '${updateCourseProgressionDto.userId || userId}', Course ID: '${updateCourseProgressionDto.courseId || userId}' already exists`,
+            HttpStatus.CONFLICT,
+          );
+        }
+      }
+
+      item.courseId = updateCourseProgressionDto.courseId ?? item.courseId;
+      item.userId = updateCourseProgressionDto.userId ?? item.userId;
+      item.completedSteps =
+        updateCourseProgressionDto.completedSteps ?? item.completedSteps ?? 0;
+      await item.save();
+      return item;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} courseProgression`;
+  async remove(userId: string, courseId: string): Promise<CourseProgression> {
+    try {
+      const item = await this.courseProgressionModel.findOneAndDelete({
+        courseId,
+        userId,
+      });
+      if (!item) {
+        throw new HttpException('No item found', HttpStatus.NOT_FOUND);
+      }
+      return item;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }
