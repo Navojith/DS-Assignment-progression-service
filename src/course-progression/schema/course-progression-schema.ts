@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-@Schema()
+@Schema({ collection: 'course-progression' })
 export class CourseProgression {
   @Prop({ required: true })
   courseId: string;

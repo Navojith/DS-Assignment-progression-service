@@ -7,7 +7,7 @@ import { CourseProgression } from './interfaces/course-progression.interface';
 @Injectable()
 export class CourseProgressionService {
   constructor(
-    @Inject('COURSE-PROGRESSION_MODEL')
+    @Inject('COURSE_PROGRESSION_MODEL')
     private courseProgressionModel: Model<CourseProgression>,
   ) {
     mongoose.set('debug', true);
@@ -16,7 +16,7 @@ export class CourseProgressionService {
   async create(
     createCourseProgressionDto: CreateCourseProgressionDto,
   ): Promise<CourseProgression> {
-    const queriedCourseProgression = this.courseProgressionModel.findOne({
+    const queriedCourseProgression = await this.courseProgressionModel.findOne({
       courseId: createCourseProgressionDto.courseId,
       userId: createCourseProgressionDto.userId,
     });
@@ -37,12 +37,23 @@ export class CourseProgressionService {
     return createdEntry;
   }
 
-  findAll() {
-    return `This action returns all courseProgression`;
+  async findAll(): Promise<CourseProgression[]> {
+    const items = await this.courseProgressionModel.find();
+    if (!items) {
+      throw new HttpException('No items found', HttpStatus.NOT_FOUND);
+    }
+    return items;
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} courseProgression`;
+  async findOne(userId: string, courseId: string): Promise<CourseProgression> {
+    const item = await this.courseProgressionModel.findOne({
+      courseId,
+      userId,
+    });
+    if (!item) {
+      throw new HttpException('No item found', HttpStatus.NOT_FOUND);
+    }
+    return item;
   }
 
   update(id: string, updateCourseProgressionDto: UpdateCourseProgressionDto) {

@@ -27,12 +27,15 @@ export class CourseProgressionController {
     return this.courseProgressionService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.courseProgressionService.findOne(id);
+  @Get(':userId/:courseId')
+  findOne(
+    @Param('userId') userId: string,
+    @Param('courseId') courseId: string,
+  ) {
+    return this.courseProgressionService.findOne(userId, courseId);
   }
 
-  @Patch(':id')
+  @Patch(':userId/:courseId')
   update(
     @Param('id') id: string,
     @Body() updateCourseProgressionDto: UpdateCourseProgressionDto,
