@@ -3,12 +3,16 @@ import { CreateCourseProgressionDto } from './dto/create-course-progression.dto'
 import { UpdateCourseProgressionDto } from './dto/update-course-progression.dto';
 import mongoose, { Model } from 'mongoose';
 import { CourseProgression } from './interfaces/course-progression.interface';
+import { CourseManagementService } from 'src/common/services/course-management-service/course.management.service';
+import { AuthService } from 'src/common/services/auth-service/auth.service';
 
 @Injectable()
 export class CourseProgressionService {
   constructor(
     @Inject('COURSE_PROGRESSION_MODEL')
     private courseProgressionModel: Model<CourseProgression>,
+    private readonly courseManagementService: CourseManagementService,
+    private readonly authService: AuthService,
   ) {
     mongoose.set('debug', true);
   }
@@ -30,16 +34,30 @@ export class CourseProgressionService {
         );
       }
 
-      const createdEntry = await this.courseProgressionModel.create({
-        courseId: createCourseProgressionDto.courseId,
-        userId: createCourseProgressionDto.userId,
-        completedSteps: createCourseProgressionDto.completedSteps,
-      });
+      const coursePromise = this.courseManagementService.findCourseByCourseId(
+        createCourseProgressionDto.courseId,
+      );
 
-      return createdEntry;
+      const userPromise = this.authService.findUserById(
+        createCourseProgressionDto.userId,
+      );
+      const [course, user] = await Promise.all([coursePromise, userPromise]);
+
+      if (course?.statusCode === 200 && user?.statusCode === 200) {
+        const createdEntry = await this.courseProgressionModel.create({
+          courseId: createCourseProgressionDto.courseId,
+          userId: createCourseProgressionDto.userId,
+          completedSteps: createCourseProgressionDto.completedSteps,
+        });
+
+        return createdEntry;
+      }
     } catch (error) {
       console.error(error);
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        error?.response?.data?.message || error?.message,
+        error?.response?.data?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -106,11 +124,24 @@ export class CourseProgressionService {
       item.userId = updateCourseProgressionDto.userId ?? item.userId;
       item.completedSteps =
         updateCourseProgressionDto.completedSteps ?? item.completedSteps ?? 0;
-      await item.save();
-      return item;
+
+      const coursePromise = this.courseManagementService.findCourseByCourseId(
+        item.courseId,
+      );
+
+      const userPromise = this.authService.findUserById(item.userId);
+      const [course, user] = await Promise.all([coursePromise, userPromise]);
+
+      if (course?.statusCode === 200 || user?.statusCode === 200) {
+        await item.save();
+        return item;
+      }
     } catch (error) {
       console.error(error);
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        error?.response?.data?.message || error?.message,
+        error?.response?.data?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
