@@ -18,17 +18,19 @@ export class CourseProgressionController {
   ) {}
 
   @Post()
-  create(@Body() createCourseProgressionDto: CreateCourseProgressionDto) {
-    return this.courseProgressionService.create(createCourseProgressionDto);
+  async create(@Body() createCourseProgressionDto: CreateCourseProgressionDto) {
+    return await this.courseProgressionService.create(
+      createCourseProgressionDto,
+    );
   }
 
   @Get()
-  findAll() {
-    return this.courseProgressionService.findAll();
+  async findAll() {
+    return await this.courseProgressionService.findAll();
   }
 
   @Get(':userId/:courseId')
-  findOne(
+  async findOne(
     @Param('userId') userId: string,
     @Param('courseId') courseId: string,
   ) {
@@ -36,12 +38,12 @@ export class CourseProgressionController {
   }
 
   @Patch(':userId/:courseId')
-  update(
+  async update(
     @Param('userId') userId: string,
     @Param('courseId') courseId: string,
     @Body() updateCourseProgressionDto: UpdateCourseProgressionDto,
   ) {
-    return this.courseProgressionService.update(
+    return await this.courseProgressionService.update(
       userId,
       courseId,
       updateCourseProgressionDto,
@@ -49,7 +51,10 @@ export class CourseProgressionController {
   }
 
   @Delete(':userId/:courseId')
-  remove(@Param('userId') userId: string, @Param('courseId') courseId: string) {
-    return this.courseProgressionService.remove(userId, courseId);
+  async remove(
+    @Param('userId') userId: string,
+    @Param('courseId') courseId: string,
+  ) {
+    return await this.courseProgressionService.remove(userId, courseId);
   }
 }

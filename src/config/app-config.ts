@@ -3,11 +3,8 @@ export interface AppConfig {
   db: {
     url: string;
   };
-  rabbitMQ: {
-    urls: string[];
-    queue: string;
-    queueOptions: {
-      durable: boolean;
-    };
+  baseUrls: {
+    courseManagementService: string;
+    authService: string;
   };
 }
