@@ -76,6 +76,12 @@ export class CourseProgressionService {
 
   async findOne(userId: string, courseId: string): Promise<CourseProgression> {
     try {
+      if (!userId || !courseId) {
+        throw new HttpException(
+          'userId and courseId required',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
       const item = await this.courseProgressionModel.findOne({
         courseId,
         userId,
@@ -84,6 +90,24 @@ export class CourseProgressionService {
         throw new HttpException('No item found', HttpStatus.NOT_FOUND);
       }
       return item;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getAllByUserId(userId: string): Promise<CourseProgression[]> {
+    try {
+      if (!userId) {
+        throw new HttpException('userId required', HttpStatus.BAD_REQUEST);
+      }
+      const items = await this.courseProgressionModel.find({
+        userId,
+      });
+      if (!items) {
+        throw new HttpException('No items found', HttpStatus.NOT_FOUND);
+      }
+      return items;
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
