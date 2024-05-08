@@ -37,6 +37,11 @@ export class CourseProgressionController {
     return this.courseProgressionService.findOne(userId, courseId);
   }
 
+  @Get(':userId')
+  async getAllByUserId(@Param('userId') userId: string) {
+    return await this.courseProgressionService.getAllByUserId(userId);
+  }
+
   @Patch(':userId/:courseId')
   async update(
     @Param('userId') userId: string,

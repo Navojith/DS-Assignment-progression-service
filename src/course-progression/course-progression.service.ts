@@ -5,6 +5,8 @@ import mongoose, { Model } from 'mongoose';
 import { CourseProgression } from './interfaces/course-progression.interface';
 import { CourseManagementService } from 'src/common/services/course-management-service/course.management.service';
 import { AuthService } from 'src/common/services/auth-service/auth.service';
+import { NotificationService } from 'src/common/services/notification-service/notification.service';
+import { NOTIFICATION_TYPES } from 'src/common/constants';
 
 @Injectable()
 export class CourseProgressionService {
@@ -13,6 +15,7 @@ export class CourseProgressionService {
     private courseProgressionModel: Model<CourseProgression>,
     private readonly courseManagementService: CourseManagementService,
     private readonly authService: AuthService,
+    private readonly notificationService: NotificationService,
   ) {
     mongoose.set('debug', true);
   }
@@ -50,7 +53,44 @@ export class CourseProgressionService {
           completedSteps: createCourseProgressionDto.completedSteps,
         });
 
-        return createdEntry;
+        if (createdEntry) {
+          if (
+            user?.data?.email &&
+            course?.data?.name &&
+            course?.data?.courseId
+          ) {
+            try {
+              const response = await this.notificationService.sendEmail({
+                type: NOTIFICATION_TYPES.course_registration,
+                email: user?.data?.email,
+                courseId: course?.data?.courseId,
+                courseName: course?.data?.name,
+              });
+
+              if (response?.statusCode !== 200) {
+                console.error(response);
+              }
+            } catch (err) {
+              throw err;
+            }
+          }
+          if (user?.data?.phoneNumber) {
+            try {
+              const response = await this.notificationService.sendSMS({
+                type: NOTIFICATION_TYPES.course_registration,
+                receiver: user?.data?.phoneNumber,
+                courseName: course?.data?.name,
+              });
+
+              if (response?.statusCode !== 200) {
+                console.error(response);
+              }
+            } catch (err) {
+              throw err;
+            }
+          }
+          return createdEntry;
+        }
       }
     } catch (error) {
       console.error(error);
@@ -76,6 +116,12 @@ export class CourseProgressionService {
 
   async findOne(userId: string, courseId: string): Promise<CourseProgression> {
     try {
+      if (!userId || !courseId) {
+        throw new HttpException(
+          'userId and courseId required',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
       const item = await this.courseProgressionModel.findOne({
         courseId,
         userId,
@@ -84,6 +130,24 @@ export class CourseProgressionService {
         throw new HttpException('No item found', HttpStatus.NOT_FOUND);
       }
       return item;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getAllByUserId(userId: string): Promise<CourseProgression[]> {
+    try {
+      if (!userId) {
+        throw new HttpException('userId required', HttpStatus.BAD_REQUEST);
+      }
+      const items = await this.courseProgressionModel.find({
+        userId,
+      });
+      if (!items) {
+        throw new HttpException('No items found', HttpStatus.NOT_FOUND);
+      }
+      return items;
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);

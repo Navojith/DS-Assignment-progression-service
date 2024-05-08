@@ -6,5 +6,6 @@ export interface AppConfig {
   baseUrls: {
     courseManagementService: string;
     authService: string;
+    notificationsService: string;
   };
 }
