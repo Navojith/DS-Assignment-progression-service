@@ -17,7 +17,18 @@ export class CourseManagementService {
         {},
       );
     } catch (error) {
-      throw error;
+      console.error(error.response?.data?.message || error);
+    }
+  }
+  async getSteps(courseId: string): Promise<HttpResponse> {
+    try {
+      return await this.apiRequestService.sendRequest(
+        `${this.courseManagementServiceURL}/course-content/${courseId}`,
+        'get',
+        {},
+      );
+    } catch (error) {
+      console.error(error.response?.data?.message || error);
     }
   }
 }
