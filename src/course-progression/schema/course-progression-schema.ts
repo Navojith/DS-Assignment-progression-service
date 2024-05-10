@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { CompletedSteps } from '../course-progression.service';
 
 @Schema({ collection: 'course-progression' })
 export class CourseProgression {
@@ -8,8 +9,8 @@ export class CourseProgression {
   @Prop({ required: true })
   userId: string;
 
-  @Prop({ required: true })
-  completedSteps: number;
+  @Prop({ type: Object, required: true, default: {} }) // Define completedSteps as a map of numbers
+  completedSteps: CompletedSteps;
 }
 export const CourseProgressionSchema =
   SchemaFactory.createForClass(CourseProgression);

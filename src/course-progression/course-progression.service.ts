@@ -1,13 +1,16 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreateCourseProgressionDto } from './dto/create-course-progression.dto';
-import { UpdateCourseProgressionDto } from './dto/update-course-progression.dto';
 import mongoose, { Model } from 'mongoose';
 import { CourseProgression } from './interfaces/course-progression.interface';
 import { CourseManagementService } from 'src/common/services/course-management-service/course.management.service';
 import { AuthService } from 'src/common/services/auth-service/auth.service';
 import { NotificationService } from 'src/common/services/notification-service/notification.service';
 import { NOTIFICATION_TYPES } from 'src/common/constants';
+import { CreateCourseProgressionDto } from './dto/create-course-progression.dto';
+import { UpdateCourseProgressionDto } from './dto/update-course-progression.dto';
 
+export interface CompletedSteps {
+  [key: string]: number;
+}
 @Injectable()
 export class CourseProgressionService {
   constructor(
@@ -50,7 +53,10 @@ export class CourseProgressionService {
         const createdEntry = await this.courseProgressionModel.create({
           courseId: createCourseProgressionDto.courseId,
           userId: createCourseProgressionDto.userId,
-          completedSteps: createCourseProgressionDto.completedSteps,
+          completedSteps:
+            (createCourseProgressionDto.completedSteps as CompletedSteps) || {
+              '1': 0,
+            },
         });
 
         if (createdEntry) {
@@ -157,7 +163,10 @@ export class CourseProgressionService {
             ]);
 
             const courseDetails = courseDetailsResponse?.data; // Handle potential null
-            const steps = stepsResponse?.data?.length || 0; // Handle potential null
+            const steps =
+              stepsResponse?.data?.sort(
+                (a: { step: number }, b: { step: number }) => b?.step - a?.step,
+              )?.[0].step || 0; // Handle potential null
 
             if (courseDetails || steps) {
               return {
@@ -218,8 +227,13 @@ export class CourseProgressionService {
 
       item.courseId = updateCourseProgressionDto.courseId ?? item.courseId;
       item.userId = updateCourseProgressionDto.userId ?? item.userId;
-      item.completedSteps =
-        updateCourseProgressionDto.completedSteps ?? item.completedSteps ?? 0;
+
+      item.completedSteps = updateCourseProgressionDto.completedSteps
+        ? ({
+            ...item.completedSteps,
+            ...(updateCourseProgressionDto.completedSteps as CompletedSteps),
+          } as CompletedSteps)
+        : (item.completedSteps as CompletedSteps) ?? { 1: 0 };
 
       const coursePromise = this.courseManagementService.findCourseByCourseId(
         item.courseId,
