@@ -1,13 +1,16 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreateCourseProgressionDto } from './dto/create-course-progression.dto';
-import { UpdateCourseProgressionDto } from './dto/update-course-progression.dto';
 import mongoose, { Model } from 'mongoose';
 import { CourseProgression } from './interfaces/course-progression.interface';
 import { CourseManagementService } from 'src/common/services/course-management-service/course.management.service';
 import { AuthService } from 'src/common/services/auth-service/auth.service';
 import { NotificationService } from 'src/common/services/notification-service/notification.service';
 import { NOTIFICATION_TYPES } from 'src/common/constants';
+import { CreateCourseProgressionDto } from './dto/create-course-progression.dto';
+import { UpdateCourseProgressionDto } from './dto/update-course-progression.dto';
 
+export interface CompletedSteps {
+  [key: string]: number;
+}
 @Injectable()
 export class CourseProgressionService {
   constructor(
@@ -50,7 +53,10 @@ export class CourseProgressionService {
         const createdEntry = await this.courseProgressionModel.create({
           courseId: createCourseProgressionDto.courseId,
           userId: createCourseProgressionDto.userId,
-          completedSteps: createCourseProgressionDto.completedSteps,
+          completedSteps:
+            (createCourseProgressionDto.completedSteps as CompletedSteps) || {
+              '1': 0,
+            },
         });
 
         if (createdEntry) {
@@ -136,7 +142,7 @@ export class CourseProgressionService {
     }
   }
 
-  async getAllByUserId(userId: string): Promise<CourseProgression[]> {
+  async getAllByUserId(userId: string) {
     try {
       if (!userId) {
         throw new HttpException('userId required', HttpStatus.BAD_REQUEST);
@@ -147,7 +153,42 @@ export class CourseProgressionService {
       if (!items) {
         throw new HttpException('No items found', HttpStatus.NOT_FOUND);
       }
-      return items;
+      const withDetails = await Promise.all(
+        items.map(async (item) => {
+          try {
+            // Initiate both API calls in parallel using Promise.all
+            const [courseDetailsResponse, stepsResponse] = await Promise.all([
+              this.courseManagementService.findCourseByCourseId(item.courseId),
+              this.courseManagementService.getSteps(item.courseId),
+            ]);
+
+            const courseDetails = courseDetailsResponse?.data; // Handle potential null
+            const steps =
+              stepsResponse?.data?.sort(
+                (a: { step: number }, b: { step: number }) => b?.step - a?.step,
+              )?.[0].step || 0; // Handle potential null
+
+            if (courseDetails || steps) {
+              return {
+                id: item.id,
+                userId: item.userId,
+                completedSteps: item.completedSteps,
+                courseDetails: courseDetails,
+                totalSteps: steps,
+              };
+            }
+            return null;
+          } catch (err) {
+            console.error(err);
+            throw new HttpException(
+              err.message,
+              HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+          }
+        }),
+      );
+      // Filter out null values (if necessary)
+      return withDetails.filter(Boolean);
     } catch (error) {
       console.error(error);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -186,8 +227,13 @@ export class CourseProgressionService {
 
       item.courseId = updateCourseProgressionDto.courseId ?? item.courseId;
       item.userId = updateCourseProgressionDto.userId ?? item.userId;
-      item.completedSteps =
-        updateCourseProgressionDto.completedSteps ?? item.completedSteps ?? 0;
+
+      item.completedSteps = updateCourseProgressionDto.completedSteps
+        ? ({
+            ...item.completedSteps,
+            ...(updateCourseProgressionDto.completedSteps as CompletedSteps),
+          } as CompletedSteps)
+        : (item.completedSteps as CompletedSteps) ?? { 1: 0 };
 
       const coursePromise = this.courseManagementService.findCourseByCourseId(
         item.courseId,
