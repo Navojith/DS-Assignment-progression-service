@@ -12,7 +12,7 @@ export class AuthService {
   async findUserById(userId: string): Promise<HttpResponse> {
     try {
       const res = await this.apiRequestService.sendRequest(
-        `${this.authServiceURL}/user/${userId}`,
+        `${this.authServiceURL}/user/findOneById/${userId}`,
         'get',
         {},
       );
