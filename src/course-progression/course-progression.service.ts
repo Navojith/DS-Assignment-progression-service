@@ -80,11 +80,12 @@ export class CourseProgressionService {
               throw err;
             }
           }
-          if (user?.data?.phoneNumber) {
+          if (user?.data?.phone) {
+            console.log('Phone number found');
             try {
               const response = await this.notificationService.sendSMS({
                 type: NOTIFICATION_TYPES.course_registration,
-                receiver: user?.data?.phoneNumber,
+                receiver: user?.data?.phone,
                 courseName: course?.data?.name,
               });
 
