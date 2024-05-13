@@ -4,4 +4,6 @@ export class CreateCourseProgressionDto {
   readonly completedSteps: {
     [key: number]: number;
   };
+  readonly email: string;
+  readonly phone: string;
 }

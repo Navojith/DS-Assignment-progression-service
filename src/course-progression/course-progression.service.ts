@@ -44,12 +44,8 @@ export class CourseProgressionService {
         createCourseProgressionDto.courseId,
       );
 
-      const userPromise = this.authService.findUserById(
-        createCourseProgressionDto.userId,
-      );
-      const [course, user] = await Promise.all([coursePromise, userPromise]);
-
-      if (course?.statusCode === 200 && user?.statusCode === 200) {
+      const course = await coursePromise;
+      if (course?.statusCode === 200) {
         const createdEntry = await this.courseProgressionModel.create({
           courseId: createCourseProgressionDto.courseId,
           userId: createCourseProgressionDto.userId,
@@ -61,14 +57,14 @@ export class CourseProgressionService {
 
         if (createdEntry) {
           if (
-            user?.data?.email &&
+            createCourseProgressionDto?.email &&
             course?.data?.name &&
             course?.data?.courseId
           ) {
             try {
               const response = await this.notificationService.sendEmail({
                 type: NOTIFICATION_TYPES.course_registration,
-                email: user?.data?.email,
+                email: createCourseProgressionDto?.email,
                 courseId: course?.data?.courseId,
                 courseName: course?.data?.name,
               });
@@ -80,12 +76,12 @@ export class CourseProgressionService {
               throw err;
             }
           }
-          if (user?.data?.phone) {
+          if (createCourseProgressionDto?.phone) {
             console.log('Phone number found');
             try {
               const response = await this.notificationService.sendSMS({
                 type: NOTIFICATION_TYPES.course_registration,
-                receiver: user?.data?.phone,
+                receiver: createCourseProgressionDto?.phone,
                 courseName: course?.data?.name,
               });
 
