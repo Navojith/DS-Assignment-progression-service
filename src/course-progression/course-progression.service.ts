@@ -236,10 +236,9 @@ export class CourseProgressionService {
         item.courseId,
       );
 
-      const userPromise = this.authService.findUserById(item.userId);
-      const [course, user] = await Promise.all([coursePromise, userPromise]);
+      const course = await coursePromise;
 
-      if (course?.statusCode === 200 || user?.statusCode === 200) {
+      if (course?.statusCode === 200) {
         await item.save();
         return item;
       }
