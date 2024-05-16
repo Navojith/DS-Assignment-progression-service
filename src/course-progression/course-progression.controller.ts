@@ -24,6 +24,15 @@ export class CourseProgressionController {
     );
   }
 
+  @Post('create-and-send-sms')
+  async createAndSendSms(
+    @Body() createCourseProgressionDto: CreateCourseProgressionDto,
+  ) {
+    return await this.courseProgressionService.createSendSms(
+      createCourseProgressionDto,
+    );
+  }
+
   @Get()
   async findAll() {
     return await this.courseProgressionService.findAll();

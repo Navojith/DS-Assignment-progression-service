@@ -76,6 +76,87 @@ export class CourseProgressionService {
               throw err;
             }
           }
+          // if (createCourseProgressionDto?.phone) {
+          //   console.log('Phone number found');
+          //   try {
+          //     const response = await this.notificationService.sendSMS({
+          //       type: NOTIFICATION_TYPES.course_registration,
+          //       receiver: createCourseProgressionDto?.phone,
+          //       courseName: course?.data?.name,
+          //     });
+
+          //     if (response?.statusCode !== 200) {
+          //       console.error(response);
+          //     }
+          //   } catch (err) {
+          //     throw err;
+          //   }
+          // }
+          return createdEntry;
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      throw new HttpException(
+        error?.response?.data?.message || error?.message,
+        error?.response?.data?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async createSendSms(
+    createCourseProgressionDto: CreateCourseProgressionDto,
+  ): Promise<CourseProgression> {
+    try {
+      const queriedCourseProgression =
+        await this.courseProgressionModel.findOne({
+          courseId: createCourseProgressionDto.courseId,
+          userId: createCourseProgressionDto.userId,
+        });
+
+      if (queriedCourseProgression) {
+        throw new HttpException(
+          `Entry with User ID: '${createCourseProgressionDto.userId}', Course ID: '${createCourseProgressionDto.courseId}' already exists`,
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      const coursePromise = this.courseManagementService.findCourseByCourseId(
+        createCourseProgressionDto.courseId,
+      );
+
+      const course = await coursePromise;
+      if (course?.statusCode === 200) {
+        const createdEntry = await this.courseProgressionModel.create({
+          courseId: createCourseProgressionDto.courseId,
+          userId: createCourseProgressionDto.userId,
+          completedSteps:
+            (createCourseProgressionDto.completedSteps as CompletedSteps) || {
+              '1': 0,
+            },
+        });
+
+        if (createdEntry) {
+          if (
+            createCourseProgressionDto?.email &&
+            course?.data?.name &&
+            course?.data?.courseId
+          ) {
+            try {
+              const response = await this.notificationService.sendEmail({
+                type: NOTIFICATION_TYPES.course_registration,
+                email: createCourseProgressionDto?.email,
+                courseId: course?.data?.courseId,
+                courseName: course?.data?.name,
+              });
+
+              if (response?.statusCode !== 200) {
+                console.error(response);
+              }
+            } catch (err) {
+              throw err;
+            }
+          }
           if (createCourseProgressionDto?.phone) {
             console.log('Phone number found');
             try {
